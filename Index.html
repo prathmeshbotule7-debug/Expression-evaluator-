@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Math Quest - Expression Evaluator</title>
+
+<style>
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background: linear-gradient(135deg, #10152f, #172b4d, #203a43);
+    color: white;
+    min-height: 100vh;
+}
+
+header {
+    text-align: center;
+    padding: 25px;
+    background: rgba(0,0,0,0.3);
+}
+
+header h1 {
+    font-size: 38px;
+    color: #00eaff;
+}
+
+header p {
+    margin-top: 8px;
+    color: #cfd8dc;
+}
+
+.container {
+    width: 90%;
+    max-width: 1100px;
+    margin: 25px auto;
+}
+
+/* SCORE PANEL */
+
+.stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.stat {
+    background: rgba(255,255,255,0.1);
+    padding: 18px;
+    text-align: center;
+    border-radius: 15px;
+    border: 1px solid rgba(255,255,255,0.15);
+}
+
+.stat h3 {
+    color: #00eaff;
+    margin-bottom: 5px;
+}
+
+.stat span {
+    font-size: 24px;
+    font-weight: bold;
+}
+
+/* GAME CARD */
+
+.game {
+    background: rgba(255,255,255,0.08);
+    padding: 25px;
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+}
+
+.expression {
+    text-align: center;
+    background: #090d20;
+    padding: 25px;
+    border-radius: 15px;
+    margin-bottom: 20px;
+}
+
+.expression h2 {
+    color: #ffd166;
+    margin-bottom: 12px;
+}
+
+#question {
+    font-size: 32px;
+    color: white;
+}
+
+/* INPUT */
+
+.input-area {
+    display: flex;
+    gap: 10px;
+    margin: 20px 0;
+}
+
+input {
+    flex: 1;
+    padding: 15px;
+    border-radius: 10px;
+    border: none;
+    font-size: 18px;
+    outline: none;
+}
+
+button {
+    border: none;
+    padding: 13px 20px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: bold;
+    transition: 0.2s;
+}
+
+button:hover {
+    transform: scale(1.05);
+}
+
+.check {
+    background: #00c853;
+    color: white;
+}
+
+.hint {
+    background: #ffb300;
+    color: #111;
+}
+
+.next {
+    background: #00b8d4;
+    color: white;
+}
+
+/* RESULT */
+
+#result {
+    text-align: center;
+    font-size: 20px;
+    min-height: 30px;
+    margin: 15px;
+}
+
+/* STACK */
+
+.stack-section {
+    margin-top: 25px;
+}
+
+.stack-section h2 {
+    color: #00eaff;
+    margin-bottom: 15px;
+}
+
+.stack-container {
+    min-height: 180px;
+    border: 2px dashed #00eaff;
+    border-radius: 15px;
+    padding: 15px;
+    display: flex;
+    flex-direction: column-reverse;
+    align-items: center;
+    justify-content: flex-start;
+}
+
+.stack-item {
+    width: 150px;
+    padding: 12px;
+    margin: 3px;
+    text-align: center;
+    background: linear-gradient(90deg, #7b2ff7, #f107a3);
+    border-radius: 8px;
+    animation: pop 0.3s ease;
+}
+
+.empty {
+    color: #aaa;
+    margin-top: 50px;
+}
+
+@keyframes pop {
+    from {
+        transform: scale(0);
+    }
+    to {
+        transform: scale(1);
+    }
+}
+
+/* POSTFIX */
+
+.postfix {
+    margin-top: 25px;
+    background: #090d20;
+    padding: 18px;
+    border-radius: 12px;
+}
+
+.postfix h3 {
+    color: #ffd166;
+    margin-bottom: 8px;
+}
+
+#postfixText {
+    color: #00ff9d;
+    font-size: 20px;
+}
+
+/* LEVEL BAR */
+
+.progress {
+    height: 12px;
+    background: #333;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-top: 10px;
+}
+
+.progress-bar {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #00eaff, #00ff9d);
+    transition: 0.4s;
+}
+
+@media(max-width:700px) {
+    .stats {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .input-area {
+        flex-direction: column;
+    }
+
+    #question {
+        font-size: 25px;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+    <h1>⚔️ MATH QUEST</h1>
+    <p>Expression Evaluator using Stack Data Structure</p>
+</header>
+
+<div class="container">
+
+    <!-- STATS -->
+
+    <div class="stats">
+
+        <div class="stat">
+            <h3>🏆 Score</h3>
+            <span id="score">0</span>
+        </div>
+
+        <div class="stat">
+            <h3>❤️ Lives</h3>
+            <span id="lives">3</span>
+        </div>
+
+        <div class="stat">
+            <h3>⭐ Level</h3>
+            <span id="level">1</span>
+        </div>
+
+        <div class="stat">
+            <h3>🔥 Streak</h3>
+            <span id="streak">0</span>
+        </div>
+
+    </div>
+
+    <div class="game">
+
+        <!-- LEVEL PROGRESS -->
+
+        <p>Level Progress</p>
+
+        <div class="progress">
+            <div class="progress-bar" id="progressBar"></div>
+        </div>
+
+        <!-- QUESTION -->
+
+        <div class="expression">
+
+            <h2>🧩 Solve the Expression</h2>
+
+            <div id="question">
+                5 + 3 × 2
+            </div>
+
+        </div>
+
+        <!-- ANSWER -->
+
+        <div class="input-area">
+
+            <input
+                type="number"
+                id="answer"
+                placeholder="Enter your answer..."
+            >
+
+            <button class="check" onclick="checkAnswer()">
+                ⚡ Check
+            </button>
+
+            <button class="hint" onclick="showHint()">
+                💡 Hint
+            </button>
+
+            <button class="next" onclick="nextQuestion()">
+                ➡ Next
+            </button>
+
+        </div>
+
+        <div id="result"></div>
+
+        <!-- STACK -->
+
+        <div class="stack-section">
+
+            <h2>📚 Stack Visualization</h2>
+
+            <div class="stack-container" id="stack">
+                <div class="empty">
+                    Stack is empty
+                </div>
+            </div>
+
+        </div>
+
+        <!-- POSTFIX -->
+
+        <div class="postfix">
+
+            <h3>🔄 Infix → Postfix</h3>
+
+            <div id="postfixText">
+                Waiting for expression...
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+
+/* =========================
+   GAME DATA
+========================= */
+
+let score = 0;
+let lives = 3;
+let level = 1;
+let streak = 0;
+let questionNumber = 0;
+
+let currentAnswer = 11;
+
+const questions = [
+
+    {
+        exp: "5 + 3 × 2",
+        answer: 11,
+        postfix: "5 3 2 × +"
+    },
+
+    {
+        exp: "10 - 4 + 2",
+        answer: 8,
+        postfix: "10 4 - 2 +"
+    },
+
+    {
+        exp: "8 ÷ 2 + 6",
+        answer: 10,
+        postfix: "8 2 ÷ 6 +"
+    },
+
+    {
+        exp: "7 + 2 × 5",
+        answer: 17,
+        postfix: "7 2 5 × +"
+    },
+
+    {
+        exp: "(8 + 2) × 3",
+        answer: 30,
+        postfix: "8 2 + 3 ×"
+    },
+
+    {
+        exp: "20 ÷ (5 - 1)",
+        answer: 5,
+        postfix: "20 5 1 - ÷"
+    },
+
+    {
+        exp: "6 × 3 - 4",
+        answer: 14,
+        postfix: "6 3 × 4 -"
+    },
+
+    {
+        exp: "(10 + 5) ÷ 3",
+        answer: 5,
+        postfix: "10 5 + 3 ÷"
+    },
+
+    {
+        exp: "4 × (3 + 2)",
+        answer: 20,
+        postfix: "4 3 2 + ×"
+    },
+
+    {
+        exp: "18 ÷ 3 + 7",
+        answer: 13,
+        postfix: "18 3 ÷ 7 +"
+    }
+
+];
+
+
+/* =========================
+   LOAD QUESTION
+========================= */
+
+function loadQuestion() {
+
+    let q = questions[questionNumber % questions.length];
+
+    document.getElementById("question").innerText = q.exp;
+
+    currentAnswer = q.answer;
+
+    document.getElementById("postfixText").innerText =
+        q.postfix;
+
+    document.getElementById("answer").value = "";
+
+    document.getElementById("result").innerText = "";
+
+    updateStack(q.postfix);
+
+    let progress =
+        ((questionNumber % questions.length) + 1)
+        / questions.length * 100;
+
+    document.getElementById("progressBar").style.width =
+        progress + "%";
+}
+
+
+/* =========================
+   CHECK ANSWER
+========================= */
+
+function checkAnswer() {
+
+    let userAnswer =
+        Number(document.getElementById("answer").value);
+
+    let result =
+        document.getElementById("result");
+
+    if (
+        document.getElementById("answer").value === ""
+    ) {
+
+        result.innerText =
+            "⚠️ Enter an answer first!";
+
+        result.style.color = "#ffd166";
+
+        return;
+    }
+
+    if (userAnswer === currentAnswer) {
+
+        score += 10;
+        streak++;
+
+        if (streak % 3 === 0) {
+            score += 5;
+        }
+
+        result.innerText =
+            "🎉 Correct! +10 Points";
+
+        result.style.color = "#00ff9d";
+
+        level =
+            Math.floor(score / 30) + 1;
+
+    } else {
+
+        lives--;
+        streak = 0;
+
+        result.innerText =
+            "❌ Wrong Answer! Try the next challenge.";
+
+        result.style.color = "#ff5252";
+
+        if (lives <= 0) {
+
+            result.innerText =
+                "💀 Game Over! Refresh to restart.";
+
+            document.querySelector(".check")
+                .disabled = true;
+
+        }
+
+    }
+
+    updateStats();
+
+}
+
+
+/* =========================
+   NEXT QUESTION
+========================= */
+
+function nextQuestion() {
+
+    if (lives <= 0) return;
+
+    questionNumber++;
+
+    loadQuestion();
+
+}
+
+
+/* =========================
+   HINT SYSTEM
+========================= */
+
+function showHint() {
+
+    let result =
+        document.getElementById("result");
+
+    result.innerText =
+        "💡 Hint: Follow BODMAS/PEMDAS. Multiplication and division come before addition and subtraction.";
+
+    result.style.color = "#ffd166";
+
+}
+
+
+/* =========================
+   UPDATE STATS
+========================= */
+
+function updateStats() {
+
+    document.getElementById("score")
+        .innerText = score;
+
+    document.getElementById("lives")
+        .innerText = lives;
+
+    document.getElementById("level")
+        .innerText = level;
+
+    document.getElementById("streak")
+        .innerText = streak;
+
+}
+
+
+/* =========================
+   STACK VISUALIZATION
+========================= */
+
+function updateStack(postfix) {
+
+    let stack =
+        document.getElementById("stack");
+
+    stack.innerHTML = "";
+
+    let items =
+        postfix.split(" ");
+
+    items.forEach(function(item) {
+
+        let div =
+            document.createElement("div");
+
+        div.className = "stack-item";
+
+        div.innerText = item;
+
+        stack.appendChild(div);
+
+    });
+
+}
+
+
+/* =========================
+   START GAME
+========================= */
+
+loadQuestion();
+updateStats();
+
+</script>
+
+</body>
+  </html>
